@@ -300,8 +300,11 @@ namespace StarryEyes.Settings
         public static readonly SettingItemStruct<int> PostLimitPerWindow =
             new SettingItemStruct<int>("PostLimitPerWindow", 128);
 
-        public static readonly SettingItemStruct<bool> IsBehaviorLogEnabled =
-            new SettingItemStruct<bool>("IsBehaviorLogEnabled", false);
+		public static readonly SettingItemStruct<bool> IsBehaviorLogEnabled =
+			new SettingItemStruct<bool>("IsBehaviorLogEnabled", false);
+
+		public static readonly SettingItemStruct<bool> IsImageCompactionEnabled =
+			new SettingItemStruct<bool>("IsImageCompactionEnabled", false);
 
         #endregion
 

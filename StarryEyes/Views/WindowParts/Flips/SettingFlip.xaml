@@ -1091,9 +1091,12 @@
                         <CheckBox Margin="0,8"
                                   Content="{x:Static localize:SettingFlipResources.HighDisableGeolocationService}"
                                   IsChecked="{Binding DisableGeoLocationService}" />
-                        <CheckBox Margin="0,8"
+						<CheckBox Margin="0,8"
                                   Content="{x:Static localize:SettingFlipResources.HighLogKrileBehavior}"
                                   IsChecked="{Binding IsBehaviorLogEnabled}" />
+						<CheckBox Margin="0,8"
+                                  Content="{x:Static localize:SettingFlipResources.HighEnableImageCompaction}"
+                                  IsChecked="{Binding IsImageCompactionEnabled}" />
                     </StackPanel>
                     <StackPanel VerticalAlignment="Bottom" Orientation="Horizontal">
                         <Button Margin="12"

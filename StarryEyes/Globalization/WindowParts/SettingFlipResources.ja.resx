@@ -601,4 +601,7 @@
   <data name="AccountButtonSetKey" xml:space="preserve">
     <value>APIキーを設定(&amp;S)</value>
   </data>
+  <data name="HighEnableImageCompaction" xml:space="preserve">
+    <value>画像圧縮を有効化する</value>
+  </data>
 </root>

@@ -601,4 +601,7 @@ Are you sure?</value>
   <data name="AccountButtonSetKey" xml:space="preserve">
     <value>&amp;Set custom API key</value>
   </data>
+  <data name="HighEnableImageCompaction" xml:space="preserve">
+    <value>Enable image compaction</value>
+  </data>
 </root>

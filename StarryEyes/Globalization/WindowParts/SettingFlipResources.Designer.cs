@@ -423,6 +423,15 @@ namespace StarryEyes.Globalization.WindowParts {
         }
         
         /// <summary>
+        ///   Enable image compaction に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string HighEnableImageCompaction {
+            get {
+                return ResourceManager.GetString("HighEnableImageCompaction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Event display time: に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string HighEventDisplayDuration {
