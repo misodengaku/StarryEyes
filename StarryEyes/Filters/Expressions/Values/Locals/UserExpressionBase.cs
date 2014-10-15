@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using StarryEyes.Albireo;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Models.Accounting;
 
 namespace StarryEyes.Filters.Expressions.Values.Locals
@@ -17,6 +17,8 @@ namespace StarryEyes.Filters.Expressions.Values.Locals
 
         public abstract IReadOnlyCollection<long> Blockings { get; }
 
+        public abstract IReadOnlyCollection<long> Mutes { get; }
+
         public abstract string UserIdSql { get; }
 
         public abstract string UsersSql { get; }
@@ -26,6 +28,8 @@ namespace StarryEyes.Filters.Expressions.Values.Locals
         public abstract string FollowersSql { get; }
 
         public abstract string BlockingsSql { get; }
+
+        public abstract string MutesSql { get; }
 
         public abstract string ToQuery();
 

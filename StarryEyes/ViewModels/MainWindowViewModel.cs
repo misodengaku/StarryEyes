@@ -244,6 +244,12 @@ namespace StarryEyes.ViewModels
                                                          });
                                   _globalAccountSelectionFlipViewModel.Open();
                               }));
+            CompositeDisposable.Add(
+                Observable.FromEvent(
+                    h => ThemeManager.ThemeChanged += h,
+                    h => ThemeManager.ThemeChanged -= h
+                    ).Subscribe(_ => this.Messenger.RaiseAsync(new InteractionMessage("InvalidateTheme"))));
+
             #endregion
 
             #region special navigations
@@ -275,6 +281,24 @@ namespace StarryEyes.ViewModels
             {
                 // lost tab info
                 this.ReInitTabs();
+            }
+
+            // check cleanup parameter
+            if (Setting.AutoCleanupTweets.Value &&
+                Setting.AutoCleanupThreshold.Value < 0)
+            {
+                var msg = this.Messenger.GetResponseSafe(() =>
+                    new TaskDialogMessage(new TaskDialogOptions
+                    {
+                        Title = AppInitResources.MsgCleanupConfigTitle,
+                        MainIcon = VistaTaskDialogIcon.Information,
+                        MainInstruction = AppInitResources.MsgCleanupConfigInst,
+                        Content = AppInitResources.MsgCleanupConfigContent,
+                        ExpandedInfo = AppInitResources.MsgCleanupConfigExInfo,
+                        CommonButtons = TaskDialogCommonButtons.YesNo
+                    }));
+                Setting.AutoCleanupTweets.Value = msg.Response.Result == TaskDialogSimpleResult.Yes;
+                Setting.AutoCleanupThreshold.Value = 100000;
             }
 
             // check execution properties
@@ -445,6 +469,11 @@ namespace StarryEyes.ViewModels
             RaisePropertyChanged(() => TweetsPerMinutes);
             RaisePropertyChanged(() => GrossTweetCount);
             RaisePropertyChanged(() => StartupTime);
+        }
+
+        public void ExecuteGC()
+        {
+            GC.Collect();
         }
 
         #endregion

@@ -7,7 +7,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Windows;
 using System.Xaml;
-using StarryEyes.Albireo;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Anomaly.TwitterApi.DataModels;
 using StarryEyes.Filters;
 using StarryEyes.Filters.Expressions;
@@ -110,14 +110,20 @@ namespace StarryEyes.Settings
         public static readonly SettingItemStruct<bool> AllowFavoriteMyself =
             new SettingItemStruct<bool>("AllowFavoriteMyself", false);
 
-        public static readonly SettingItemStruct<bool> ShowThumbnails =
-            new SettingItemStruct<bool>("ShowThumbnails", true);
+        public static readonly SettingItemStruct<ThumbnailMode> ThumbnailMode =
+            new SettingItemStruct<ThumbnailMode>("ThumbnailMode", Settings.ThumbnailMode.All);
 
         public static readonly SettingItemStruct<bool> OpenTwitterImageWithOriginalSize =
             new SettingItemStruct<bool>("OpenTwitterImageWithOriginalSize", true);
 
         public static readonly SettingItem<string> SearchLanguage =
             new SettingItem<string>("SearchLanguage", Thread.CurrentThread.CurrentUICulture.TwoLetterISOLanguageName);
+
+        public static readonly SettingItemStruct<bool> AutoCleanupTweets =
+            new SettingItemStruct<bool>("AutoCleanupTweets", true);
+
+        public static readonly SettingItemStruct<int> AutoCleanupThreshold =
+            new SettingItemStruct<int>("AutoCleanupThreshold", -1);
 
         #endregion
 
@@ -146,6 +152,9 @@ namespace StarryEyes.Settings
 
         public static readonly SettingItemStruct<bool> MuteNoRetweets =
             new SettingItemStruct<bool>("MuteNoRetweets", true);
+
+        public static readonly SettingItemStruct<bool> MuteOfficialMutes =
+            new SettingItemStruct<bool>("MuteOfficialMutes", true);
 
         public static readonly SettingItemStruct<bool> UseLightweightMute =
             new SettingItemStruct<bool>("UseLightweightMute", false);
@@ -211,6 +220,9 @@ namespace StarryEyes.Settings
         public static readonly SettingItemStruct<bool> NotifyWhenWindowIsActive =
             new SettingItemStruct<bool>("NotifyWhenWindowIsActive", false);
 
+        public static readonly SettingItemStruct<bool> NotifyBackfilledTweets =
+            new SettingItemStruct<bool>("NotifyBackfilledTweets", false);
+
         public static readonly SettingItemStruct<bool> NotifyMention =
             new SettingItemStruct<bool>("NotifyMention", true);
 
@@ -235,6 +247,9 @@ namespace StarryEyes.Settings
 
         public static readonly SettingItemStruct<bool> AcceptUnstableVersion =
             new SettingItemStruct<bool>("AcceptUnstableVersion", App.IsUnstableVersion);
+
+        public static readonly SettingItemStruct<bool> UseInMemoryDatabase =
+            new SettingItemStruct<bool>("UseInMemoryDatabase", false);
 
         public static readonly SettingItem<string> UserAgent =
             new SettingItem<string>("UserAgent", null);
@@ -699,7 +714,9 @@ namespace StarryEyes.Settings
     public enum TweetDisplayMode
     {
         SingleLine,
-        Mixed,
+        MultiLine,
+        MixedSingleLine,
+        MixedMultiLine,
         Expanded
     }
 
@@ -760,4 +777,12 @@ namespace StarryEyes.Settings
         RelatedOnly,
         FollowingsOnly,
     }
+
+    public enum ThumbnailMode
+    {
+        None,
+        Single,
+        All
+    }
+
 }

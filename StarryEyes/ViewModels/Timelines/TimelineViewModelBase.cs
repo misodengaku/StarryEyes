@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using JetBrains.Annotations;
 using Livet;
 using Livet.EventListeners;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Albireo.Threading;
 using StarryEyes.Globalization.WindowParts;
 using StarryEyes.Models.Inputting;
@@ -33,6 +33,9 @@ namespace StarryEyes.ViewModels.Timelines
             App.ApplicationFinalize += () => _disposeWorker.Dispose();
         }
 
+        /// <summary>
+        /// maximum read-back count
+        /// </summary>
         private const int MaxReadCount = 5;
         private readonly object _timelineLock = new object();
         private readonly ObservableCollection<StatusViewModel> _timeline;
@@ -61,7 +64,7 @@ namespace StarryEyes.ViewModels.Timelines
                 if (_isLoading == value) return;
                 _isLoading = value;
                 RaisePropertyChanged();
-                RaisePropertyChanged(() => IsScrollLock);
+                RaisePropertyChanged(() => IsScrollLockEnabled);
                 RaisePropertyChanged(() => IsAnimationEnabled);
             }
         }
@@ -74,7 +77,7 @@ namespace StarryEyes.ViewModels.Timelines
                 if (_isMouseOver == value) return;
                 _isMouseOver = value;
                 RaisePropertyChanged();
-                RaisePropertyChanged(() => IsScrollLock);
+                RaisePropertyChanged(() => this.IsScrollLockEnabled);
             }
         }
 
@@ -86,7 +89,7 @@ namespace StarryEyes.ViewModels.Timelines
                 if (this._isScrollOnTop == value) return;
                 this._isScrollOnTop = value;
                 RaisePropertyChanged();
-                RaisePropertyChanged(() => IsScrollLock);
+                // RaisePropertyChanged(() => IsScrollLockEnabled);
                 // revive auto trim
                 if (!this._model.IsAutoTrimEnabled)
                 {
@@ -119,7 +122,7 @@ namespace StarryEyes.ViewModels.Timelines
                 if (_isScrollLockExplicit == value) return;
                 _isScrollLockExplicit = value;
                 RaisePropertyChanged();
-                RaisePropertyChanged(() => IsScrollLock);
+                RaisePropertyChanged(() => this.IsScrollLockEnabled);
             }
         }
 
@@ -128,18 +131,13 @@ namespace StarryEyes.ViewModels.Timelines
             get { return Setting.IsScrollByPixel.Value ? ScrollUnit.Pixel : ScrollUnit.Item; }
         }
 
-        public bool IsScrollLockExplicitEnabled
-        {
-            get { return Setting.ScrollLockStrategy.Value == ScrollLockStrategy.Explicit; }
-        }
-
-        public bool IsScrollLock
+        public bool IsScrollLockEnabled
         {
             get
             {
                 if (this.IsLoading)
                 {
-                    // when loading, skip scroll-locking.
+                    // when (re)loading, skip scroll-locking.
                     return false;
                 }
                 switch (Setting.ScrollLockStrategy.Value)
@@ -172,7 +170,7 @@ namespace StarryEyes.ViewModels.Timelines
             {
                 if (this.IsLoading)
                 {
-                    // when loading, skip scroll-locking.
+                    // when (re)loading, skip scrolling action.
                     return false;
                 }
                 return Setting.IsScrollByPixel.Value && Setting.IsAnimateScrollToNewTweet.Value;
@@ -183,24 +181,54 @@ namespace StarryEyes.ViewModels.Timelines
         {
             this._model = model;
             this._timeline = new ObservableCollection<StatusViewModel>();
-            DispatcherHolder.Enqueue(this.InitializeCollection, DispatcherPriority.Background);
+            DispatcherHelper.UIDispatcher.InvokeAsync(this.InitializeCollection, DispatcherPriority.Background);
             this.CompositeDisposable.Add(
                 new EventListener<Action<bool>>(
-                    h => model.InvalidationStateChanged += h,
-                    h => model.InvalidationStateChanged -= h,
-                    s => this.IsLoading = s));
+                    h => model.IsLoadingChanged += h,
+                    h => model.IsLoadingChanged -= h,
+                    isLoading =>
+                    {
+                        if (isLoading)
+                        {
+                            // send immediate
+                            // ! MUST BE DispatcherPriority.Send ! 
+                            // for update binding value before beginning rendering.
+                            DispatcherHelper.UIDispatcher.InvokeAsync(() =>
+                            {
+                                this.IsLoading = true;
+                            }, DispatcherPriority.Send);
+                        }
+                        else
+                        {
+                            // wait for dispatcher
+                            DispatcherHelper.UIDispatcher.InvokeAsync(() =>
+                            {
+                                // this clause is invoked later, so re-check currrent value
+                                if (model.IsLoading == false)
+                                {
+                                    this.IsLoading = false;
+                                }
+                            }, DispatcherPriority.ContextIdle);
+                        }
+                    }));
             this.CompositeDisposable.Add(() =>
             {
                 if (_listener != null) _listener.Dispose();
             });
             this.CompositeDisposable.Add(
-                this.ListenPropertyChanged(() => this.CurrentAccounts)
-                    .ObserveOnDispatcher()
-                    .Select(_ => this.CurrentAccounts.ToArray())
-                    .Subscribe(a => _timeline.ForEach(s => s.BindingAccounts = a)));
+                this.ListenPropertyChanged(() => this.CurrentAccounts,
+                    e => DispatcherHelper.UIDispatcher.InvokeAsync(() =>
+                    {
+                        var a = this.CurrentAccounts.ToArray();
+                        this._timeline.ForEach(s => s.BindingAccounts = a);
+                    })));
             this.CompositeDisposable.Add(
                 Setting.ScrollLockStrategy.ListenValueChanged(
-                    v => RaisePropertyChanged(() => IsScrollLock)));
+                    v =>
+                    {
+                        RaisePropertyChanged(() => this.IsScrollLockEnabled);
+                        RaisePropertyChanged(() => this.IsScrollLockOnlyScrolled);
+                    }));
             this.CompositeDisposable.Add(
                 Setting.IsAnimateScrollToNewTweet.ListenValueChanged(
                     v => RaisePropertyChanged(() => IsAnimationEnabled)));
@@ -211,17 +239,18 @@ namespace StarryEyes.ViewModels.Timelines
                         RaisePropertyChanged(() => ScrollUnit);
                         RaisePropertyChanged(() => IsAnimationEnabled);
                     }));
-            this.IsLoading = true;
             this._model.InvalidateTimeline();
         }
 
         public void ReadMore()
         {
             if (this.IsScrollOnTop || IsLoading) return;
-            ReadMore(this._model.Statuses
-                         .Select(s => s.Status.Id)
-                         .Append(long.MaxValue)
-                         .Min());
+            // get minimum status id in this timeline
+            var minId = this._model.Statuses
+                            .Select(s => s.Status.Id)
+                            .Append(long.MaxValue)
+                            .Min();
+            ReadMore(minId);
         }
 
         public void ReadMore(long id)
@@ -229,37 +258,28 @@ namespace StarryEyes.ViewModels.Timelines
             if (IsLoading) return;
             if (!this._model.IsAutoTrimEnabled)
             {
+                // check read-back count
                 if (_readCount >= MaxReadCount) return;
                 _readCount++;
             }
             else
             {
+                // disable auto trimming
                 this._model.IsAutoTrimEnabled = false;
             }
-            Task.Run(async () =>
-            {
-                this.IsLoading = true;
-                await ReadMoreCore(id == long.MaxValue ? (long?)null : id);
-                this.IsLoading = false;
-            });
-        }
-
-        protected virtual async Task ReadMoreCore(long? id)
-        {
-            await this._model.ReadMore(id);
+            Task.Run(() => _model.ReadMore(id == long.MaxValue ? (long?)null : id));
         }
 
         #region Selection Control
 
-        public bool IsSelectedStatusExisted
+        public bool IsStatusSelected
         {
             get { return this.Timeline.FirstOrDefault(_ => _.IsSelected) != null; }
         }
 
         public void OnSelectionUpdated()
         {
-            RaisePropertyChanged(() => IsSelectedStatusExisted);
-            // TODO: Impl
+            RaisePropertyChanged(() => this.IsStatusSelected);
         }
 
         private IEnumerable<StatusViewModel> SelectedStatuses
@@ -405,11 +425,10 @@ namespace StarryEyes.ViewModels.Timelines
             lock (this._timelineLock)
             {
                 var sts = this._model.Statuses.SynchronizedToArray(
-                    () => _listener = this._model.Statuses
-                                          .ListenCollectionChanged()
-                                          .Subscribe(e => DispatcherHolder.Enqueue(
-                                              () => this.ReflectCollectionChanged(e),
-                                              DispatcherPriority.Background)));
+                    () => _listener = this._model.Statuses.ListenCollectionChanged(
+                        e => DispatcherHelper.UIDispatcher.InvokeAsync(
+                            () => this.ReflectCollectionChanged(e),
+                            DispatcherPriority.Background)));
                 var items = _timeline.ToArray();
                 this._timeline.Clear();
                 sts.OrderByDescending(s => s.Status.CreatedAt)
@@ -438,6 +457,10 @@ namespace StarryEyes.ViewModels.Timelines
                         case NotifyCollectionChangedAction.Remove:
                             var removal = this._timeline[e.OldStartingIndex];
                             this._timeline.RemoveAt(e.OldStartingIndex);
+                            if (removal.IsSelected)
+                            {
+                                OnSelectionUpdated();
+                            }
                             _disposeWorker.Queue(() => removal.Dispose());
                             break;
                         case NotifyCollectionChangedAction.Reset:
@@ -474,7 +497,7 @@ namespace StarryEyes.ViewModels.Timelines
             if (!disposing) return;
             Task.Run(async () =>
             {
-                var array = await DispatcherHolder.Dispatcher.BeginInvoke(() =>
+                var array = await DispatcherHelper.UIDispatcher.InvokeAsync(() =>
                 {
                     lock (this._timelineLock)
                     {

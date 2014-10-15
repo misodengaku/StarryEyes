@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reactive.Linq;
 using Livet;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Models;
 using StarryEyes.Models.Timelines.Tabs;
 using StarryEyes.Settings;
@@ -30,8 +31,7 @@ namespace StarryEyes.ViewModels.WindowParts
                           .Select(_ => TabManager.CurrentFocusColumnIndex)
                           .Subscribe(UpdateFocusFromModel));
             CompositeDisposable.Add(
-                _columns.ListenCollectionChanged()
-                        .Subscribe(_ => _columns.ForEach(c => c.UpdateFocus())));
+                _columns.ListenCollectionChanged(_ => _columns.ForEach(c => c.UpdateFocus())));
             RegisterEvents();
         }
 
@@ -65,7 +65,7 @@ namespace StarryEyes.ViewModels.WindowParts
 
         private void UpdateFocusFromModel(int newFocus)
         {
-            DispatcherHolder.Enqueue(() =>
+            DispatcherHelper.UIDispatcher.InvokeAsync(() =>
             {
                 _columns.ForEach(c => c.UpdateFocus());
                 RaisePropertyChanged(() => FocusedColumn);
@@ -126,6 +126,7 @@ namespace StarryEyes.ViewModels.WindowParts
                 KeyAssignAction.Create("CopyPermalink", () => ExecuteStatusAction(s => s.CopyPermalink())),
                 KeyAssignAction.Create("ShowUserProfile", () => ExecuteStatusAction(s => s.ShowUserProfile())),
                 KeyAssignAction.Create("ShowRetweeterProfile", () => ExecuteStatusAction(s => s.ShowRetweeterProfile())),
+                KeyAssignAction.Create("ShowRecipientProfile", () => ExecuteStatusAction(s => s.ShowRecipientProfile())),
                 KeyAssignAction.Create("OpenWeb", () => ExecuteStatusAction(s => s.OpenWeb())),
                 KeyAssignAction.Create("OpenFavstar", () => ExecuteStatusAction(s => s.OpenFavstar())),
                 KeyAssignAction.Create("OpenUserDetailOnTwitter",
@@ -133,7 +134,7 @@ namespace StarryEyes.ViewModels.WindowParts
                 KeyAssignAction.Create("OpenUserFavstar", () => ExecuteStatusAction(s => s.OpenUserFavstar())),
                 KeyAssignAction.Create("OpenUserTwilog", () => ExecuteStatusAction(s => s.OpenUserTwilog())),
                 KeyAssignAction.Create("OpenSource", () => ExecuteStatusAction(s => s.OpenSourceLink())),
-                KeyAssignAction.Create("OpenThumbnail", () => ExecuteStatusAction(s => s.OpenThumbnailImage())),
+
                 KeyAssignAction.Create("ShowConversation", () => ExecuteStatusAction(s => s.ShowConversation())),
                 KeyAssignAction.Create("MuteUser", () => ExecuteStatusAction(s => s.MuteUser())),
                 KeyAssignAction.Create("MuteClient", () => ExecuteStatusAction(s => s.MuteClient())),
@@ -141,7 +142,9 @@ namespace StarryEyes.ViewModels.WindowParts
                 KeyAssignAction.CreateWithArgumentOptional("Reply",
                     a => this.ExecuteStatusAction(s => s.SendReplyOrDirectMessage(a))),
                 KeyAssignAction.CreateWithArgumentRequired("OpenUrl",
-                    a => this.ExecuteStatusAction(s => s.OpenNthLink(a)))
+                    a => this.ExecuteStatusAction(s => s.OpenNthLink(a))),
+                KeyAssignAction.CreateWithArgumentOptional("OpenThumbnail",
+                    a => this.ExecuteStatusAction(s => s.OpenNthThumbnail(a)))
                 );
 
             // Timeline argumentable actions
@@ -154,7 +157,7 @@ namespace StarryEyes.ViewModels.WindowParts
         {
             var timeline = TimelineActionTargetOverride ?? FocusedColumn.FocusedTab;
             if (timeline == null) return;
-            DispatcherHolder.Enqueue(() => action(timeline));
+            DispatcherHelper.UIDispatcher.InvokeAsync(() => action(timeline));
         }
 
         internal void ExecuteStatusAction(Action<StatusViewModel> status)

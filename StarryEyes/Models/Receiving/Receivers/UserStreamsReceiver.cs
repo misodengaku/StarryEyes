@@ -7,7 +7,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using StarryEyes.Albireo;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Anomaly.TwitterApi;
 using StarryEyes.Anomaly.TwitterApi.DataModels;
 using StarryEyes.Anomaly.TwitterApi.DataModels.StreamModels;
@@ -141,8 +141,9 @@ namespace StarryEyes.Models.Receiving.Receivers
             this.CheckDisposed();
             this.ConnectionState = UserStreamsConnectionState.Connecting;
             Log("starting connection...");
+            var isConnectionActive = true;
             var con = this.Account.ConnectUserStreams(this._trackKeywords, this.Account.ReceiveRepliesAll,
-                                                      this.Account.ReceiveFollowingsActivity)
+                this.Account.ReceiveFollowingsActivity)
                           .Do(_ =>
                           {
                               if (this.ConnectionState != UserStreamsConnectionState.Connecting) return;
@@ -151,10 +152,14 @@ namespace StarryEyes.Models.Receiving.Receivers
                               Log("successfully connected.");
                           })
                           .SubscribeWithHandler(new HandleStreams(this),
-                                                this.HandleException,
-                                                this.Reconnect);
+                              ex => { if (isConnectionActive) this.HandleException(ex); },
+                              () => { if (isConnectionActive) this.Reconnect(); });
             _stateUpdater.UpdateState();
-            return con;
+            return Disposable.Create(() =>
+            {
+                isConnectionActive = false;
+                con.Dispose();
+            });
         }
 
         private void Log(string log)
@@ -235,42 +240,42 @@ namespace StarryEyes.Models.Receiving.Receivers
                     case StreamUserActivityEvent.Follow:
                         if (active)
                         {
-                            await reldata.SetFollowingAsync(item.Target.Id, true);
+                            await reldata.Followings.SetAsync(item.Target.Id, true);
                         }
                         if (passive)
                         {
-                            await reldata.SetFollowerAsync(item.Source.Id, true);
+                            await reldata.Followers.SetAsync(item.Source.Id, true);
                         }
                         NotificationService.NotifyFollowed(item.Source, item.Target);
                         break;
                     case StreamUserActivityEvent.Unfollow:
                         if (active)
                         {
-                            await reldata.SetFollowingAsync(item.Target.Id, false);
+                            await reldata.Followings.SetAsync(item.Target.Id, false);
                         }
                         if (passive)
                         {
-                            await reldata.SetFollowerAsync(item.Source.Id, false);
+                            await reldata.Followers.SetAsync(item.Source.Id, false);
                         }
                         NotificationService.NotifyUnfollowed(item.Source, item.Target);
                         break;
                     case StreamUserActivityEvent.Block:
                         if (active)
                         {
-                            await reldata.SetFollowingAsync(item.Target.Id, false);
-                            await reldata.SetFollowerAsync(item.Target.Id, false);
-                            await reldata.SetBlockingAsync(item.Target.Id, true);
+                            await reldata.Followings.SetAsync(item.Target.Id, false);
+                            await reldata.Followers.SetAsync(item.Target.Id, false);
+                            await reldata.Blockings.SetAsync(item.Target.Id, true);
                         }
                         if (passive)
                         {
-                            await reldata.SetFollowerAsync(item.Target.Id, false);
+                            await reldata.Followers.SetAsync(item.Target.Id, false);
                         }
                         NotificationService.NotifyBlocked(item.Source, item.Target);
                         break;
                     case StreamUserActivityEvent.Unblock:
                         if (active)
                         {
-                            await reldata.SetBlockingAsync(item.Target.Id, false);
+                            await reldata.Blockings.SetAsync(item.Target.Id, false);
                         }
                         NotificationService.NotifyUnblocked(item.Source, item.Target);
                         break;

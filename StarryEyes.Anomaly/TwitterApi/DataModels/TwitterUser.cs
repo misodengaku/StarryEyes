@@ -16,10 +16,10 @@ namespace StarryEyes.Anomaly.TwitterApi.DataModels
         public TwitterUser(dynamic json)
         {
             this.Id = ((string)json.id_str).ParseLong();
-            this.ScreenName = json.screen_name;
-            this.Name = json.name;
-            this.Description = json.description;
-            this.Location = json.location;
+            this.ScreenName = ParsingExtension.ResolveEntity(json.screen_name);
+            this.Name = ParsingExtension.ResolveEntity(json.name ?? String.Empty);
+            this.Description = ParsingExtension.ResolveEntity(json.description ?? String.Empty);
+            this.Location = ParsingExtension.ResolveEntity(json.location ?? String.Empty);
             this.Url = json.url;
             this.IsDefaultProfileImage = json.default_profile_image;
             this.ProfileImageUri = ((string)json.profile_image_url).ParseUri();
@@ -33,11 +33,11 @@ namespace StarryEyes.Anomaly.TwitterApi.DataModels
             this.IsTranslator = json.is_translator;
             this.IsContributorsEnabled = json.contributors_enabled;
             this.IsGeoEnabled = json.geo_enabled;
-            this.StatusesCount = (long)json.statuses_count;
-            this.FollowingsCount = (long)json.friends_count;
-            this.FollowersCount = (long)json.followers_count;
-            this.FavoritesCount = (long)json.favourites_count;
-            this.ListedCount = (long)json.listed_count;
+            this.StatusesCount = (long)((double?)json.statuses_count ?? default(double));
+            this.FollowingsCount = (long)((double?)json.friends_count ?? default(double));
+            this.FollowersCount = (long)((double?)json.followers_count ?? default(double));
+            this.FavoritesCount = (long)((double?)json.favourites_count ?? default(double));
+            this.ListedCount = (long)((double?)json.listed_count ?? default(double));
             this.Language = json.lang;
             this.CreatedAt = ((string)json.created_at).ParseDateTime(ParsingExtension.TwitterDateTimeFormat);
             if (json.entities())
@@ -234,7 +234,7 @@ namespace StarryEyes.Anomaly.TwitterApi.DataModels
         public string GetEntityAidedDescription(bool showFullUrl = false)
         {
             var builder = new StringBuilder();
-            var escaped = ParsingExtension.EscapeEntity(this.Description ?? String.Empty);
+            var escaped = this.Description ?? String.Empty;
             TwitterEntity prevEntity = null;
             foreach (var entity in this.DescriptionEntities.Guard().OrderBy(e => e.StartIndex))
             {

@@ -70,7 +70,6 @@ namespace StarryEyes
 
             // initialize dispatcher helper
             DispatcherHelper.UIDispatcher = Application.Current.Dispatcher;
-            DispatcherHolder.Initialize(Application.Current.Dispatcher);
 
             // set rendering mode
             if (!useHardwareRendering)
@@ -250,7 +249,7 @@ namespace StarryEyes
             ServicePointManager.DefaultConnectionLimit = Int32.MaxValue; // Limit Break!
 
             // declare security protocol explicitly
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         }
 
         private static void InitializeSubsystemsBeforeSettingsLoaded()
@@ -282,6 +281,60 @@ namespace StarryEyes
 
         #endregion
 
+        #region Tweet cleanup
+
+        public static void CleanupTweetsIfRequired()
+        {
+            try
+            {
+                var threshold = Setting.AutoCleanupThreshold.Value;
+                if (!Setting.AutoCleanupTweets.Value || threshold <= 0) return;
+                var cleanup = Database.StatusCrud.GetCountAsync();
+                if (cleanup.Wait(TimeSpan.FromSeconds(0.1)) && cleanup.Result < threshold * 2)
+                {
+                    return;
+                }
+            }
+            catch (SqliteCrudException)
+            {
+            }
+            ShowWorkingDialog("cleaning tweets...", CleanupStatus);
+        }
+
+        private static async Task CleanupStatus(Action<string> state)
+        {
+            var threshold = Setting.AutoCleanupThreshold.Value;
+            try
+            {
+                // check status count
+                var cleanup = Database.StatusCrud.GetCountAsync();
+                if (cleanup.Wait(TimeSpan.FromSeconds(0.1)) && cleanup.Result < threshold * 2)
+                {
+                    return;
+                }
+
+                // delete old status
+                await Database.CleanupOldStatusesAsync(threshold,
+                        t => state("cleaning tweets (" + t.Item1 + "/" + t.Item2 + ")..."));
+
+                // require optimizing
+                _isDatabaseOptimizationRequired = true;
+            }
+            catch (SqliteCrudException cex)
+            {
+                TaskDialog.Show(new TaskDialogOptions
+                {
+                    MainIcon = VistaTaskDialogIcon.Error,
+                    Title = AppInitResources.MsgDbCleanupFailedTitle,
+                    MainInstruction = AppInitResources.MsgDbCleanupFailedInst,
+                    Content = cex.Message,
+                    ExpandedInfo = cex.ToString()
+                });
+            }
+        }
+
+        #endregion
+
         #region Database optimization
 
         private static bool _isDatabaseOptimizationRequired;
@@ -294,23 +347,7 @@ namespace StarryEyes
         public static void OptimizeDatabaseIfRequired()
         {
             if (!_isDatabaseOptimizationRequired) return;
-
-            // change application shutdown mode for preventing 
-            // auto-exit when optimization is completed.
-            Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-            try
-            {
-                // run database optimization
-                var optDlg = new WorkingWindow(
-                    "optimizing database...",
-                    OptimizeDatabase);
-                optDlg.ShowDialog();
-            }
-            finally
-            {
-                // restore shutdown mode
-                Application.Current.ShutdownMode = ShutdownMode.OnLastWindowClose;
-            }
+            ShowWorkingDialog("optimizing database...", OptimizeDatabase);
         }
 
         private static async Task OptimizeDatabase()
@@ -524,6 +561,44 @@ namespace StarryEyes
             }
             finally
             {
+                Application.Current.ShutdownMode = ShutdownMode.OnLastWindowClose;
+            }
+        }
+
+        private static void ShowWorkingDialog(string description, Func<Task> executeTask)
+        {
+            // change application shutdown mode for preventing 
+            // auto-exit when optimization is completed.
+            Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            try
+            {
+                // run database optimization
+                var optDlg = new WorkingWindow(
+                    description, executeTask);
+                optDlg.ShowDialog();
+            }
+            finally
+            {
+                // restore shutdown mode
+                Application.Current.ShutdownMode = ShutdownMode.OnLastWindowClose;
+            }
+        }
+
+        private static void ShowWorkingDialog(string description, Func<Action<string>, Task> executeTask)
+        {
+            // change application shutdown mode for preventing 
+            // auto-exit when optimization is completed.
+            Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            try
+            {
+                // run database optimization
+                var optDlg = new WorkingWindow(
+                    description, executeTask);
+                optDlg.ShowDialog();
+            }
+            finally
+            {
+                // restore shutdown mode
                 Application.Current.ShutdownMode = ShutdownMode.OnLastWindowClose;
             }
         }

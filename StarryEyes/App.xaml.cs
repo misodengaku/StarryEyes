@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Threading;
 using JetBrains.Annotations;
 using StarryEyes.Casket;
+using StarryEyes.Casket.Connections;
 using StarryEyes.Globalization;
 using StarryEyes.Models.Databases;
 using StarryEyes.Nightmare.Windows;
@@ -35,7 +36,7 @@ namespace StarryEyes
             _startupTime = DateTime.Now;
 
             // create default theme xaml
-            // File.WriteAllText("default.xaml", DefaultThemeProvider.GetDefaultAsXaml());
+            // File.WriteAllText("default.xaml", BuiltInThemeProvider.ExportThemeAsXaml(BuiltInThemeProvider.GetDefault()));
             // Environment.Exit(0);
 
             // call pre-initializer
@@ -64,7 +65,14 @@ namespace StarryEyes
             }
 
             // initialize database
-            Database.Initialize(DatabaseFilePath);
+            if (Setting.UseInMemoryDatabase.Value)
+            {
+                Database.Initialize(new InMemoryDatabaseConnectionDescriptor());
+            }
+            else
+            {
+                Database.Initialize(new DatabaseConnectionDescriptor(DatabaseFilePath));
+            }
             if (!this.CheckDatabase())
             {
                 // db migration failed
@@ -72,8 +80,12 @@ namespace StarryEyes
                 Environment.Exit(0);
             }
 
+            // Cleanup database if required.
+            AppInitializer.CleanupTweetsIfRequired();
+
             // Optimize database when user specified to do so in pre-execution dialog.
             AppInitializer.OptimizeDatabaseIfRequired();
+
 
             // Apply theme
             InitializeTheme();
@@ -213,28 +225,19 @@ namespace StarryEyes
 
         public static bool IsOperatingSystemSupported
         {
-            get
-            {
-                return Environment.OSVersion.Version.Major == 6;
-            }
+            get { return Environment.OSVersion.Version.Major == 6; }
         }
 
         [NotNull]
         public static string ExeFilePath
         {
-            get
-            {
-                return Process.GetCurrentProcess().MainModule.FileName;
-            }
+            get { return Process.GetCurrentProcess().MainModule.FileName; }
         }
 
         [NotNull]
         public static string ExeFileDir
         {
-            get
-            {
-                return Path.GetDirectoryName(ExeFilePath) ?? ExeFilePath + "_";
-            }
+            get { return Path.GetDirectoryName(ExeFilePath) ?? ExeFilePath + "_"; }
         }
 
         public static ExecutionMode ExecutionMode
@@ -347,10 +350,7 @@ namespace StarryEyes
         [NotNull]
         public static string ConfigurationFilePath
         {
-            get
-            {
-                return Path.Combine(ConfigurationDirectoryPath, ConfigurationFileName);
-            }
+            get { return Path.Combine(ConfigurationDirectoryPath, ConfigurationFileName); }
         }
 
         [NotNull]

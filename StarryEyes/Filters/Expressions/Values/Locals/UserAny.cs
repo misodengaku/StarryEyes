@@ -5,6 +5,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using StarryEyes.Albireo.Collections;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Models.Accounting;
 using StarryEyes.Settings;
 
@@ -34,7 +35,7 @@ namespace StarryEyes.Filters.Expressions.Values.Locals
                 var following = new AVLTree<long>(
                     Setting.Accounts
                            .Collection
-                           .SelectMany(a => a.RelationData.Followings));
+                           .SelectMany(a => a.RelationData.Followings.Items));
                 return following;
             }
         }
@@ -46,7 +47,7 @@ namespace StarryEyes.Filters.Expressions.Values.Locals
                 var followers = new AVLTree<long>(
                     Setting.Accounts
                            .Collection
-                           .SelectMany(a => a.RelationData.Followers));
+                           .SelectMany(a => a.RelationData.Followers.Items));
                 return followers;
             }
         }
@@ -58,8 +59,20 @@ namespace StarryEyes.Filters.Expressions.Values.Locals
                 var blockings = new AVLTree<long>(
                     Setting.Accounts
                            .Collection
-                           .SelectMany(a => a.RelationData.Blockings));
+                           .SelectMany(a => a.RelationData.Blockings.Items));
                 return blockings;
+            }
+        }
+
+        public override IReadOnlyCollection<long> Mutes
+        {
+            get
+            {
+                var mutes = new AVLTree<long>(
+                    Setting.Accounts
+                           .Collection
+                           .SelectMany(a => a.RelationData.Mutes.Items));
+                return mutes;
             }
         }
 
@@ -91,6 +104,11 @@ namespace StarryEyes.Filters.Expressions.Values.Locals
             get { return "(select TargetId from Blockings)"; }
         }
 
+        public override string MutesSql
+        {
+            get { return "(select TargetId from Mutes)"; }
+        }
+
         public override string ToQuery()
         {
             return "our";
@@ -98,10 +116,8 @@ namespace StarryEyes.Filters.Expressions.Values.Locals
 
         public override void BeginLifecycle()
         {
-            _disposables.Add(
-                Setting.Accounts.Collection
-                       .ListenCollectionChanged()
-                       .Subscribe(_ => this.RaiseReapplyFilter(null)));
+            _disposables.Add(Setting.Accounts.Collection.ListenCollectionChanged(
+                _ => this.RaiseReapplyFilter(null)));
             _disposables.Add(
                 Observable.FromEvent<RelationDataChangedInfo>(
                     h => AccountRelationData.AccountDataUpdatedStatic += h,

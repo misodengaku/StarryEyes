@@ -28,6 +28,9 @@
                 <ResourceDictionary Source="/Themes/FlipContent.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <utils:BooleanToVisibleConverter x:Key="BoolVisibleConverter" />
+            <Style TargetType="{x:Type xctk:IntegerUpDown}">
+                <Setter Property="Foreground" Value="{DynamicResource BaseColorForegroundBrush}" />
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
     <flips:FlipContent IsOpen="{Binding IsConfigurationActive}"
@@ -94,7 +97,7 @@
                         </Style>
                     </ListBox.Resources>
                     <ListBox.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate DataType="{x:Type TextBlock}">
                             <Grid Background="{DynamicResource BaseColorBackgroundBrush}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -128,8 +131,8 @@
                             <DataTemplate.Triggers>
                                 <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListBoxItem}}}" Value="True">
                                     <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
-                                    <Setter TargetName="Indicator" Property="Fill" Value="#1BA1E2" />
-                                    <Setter TargetName="DisplayText" Property="Foreground" Value="#1BA1E2" />
+                                    <Setter TargetName="Indicator" Property="Fill" Value="{StaticResource MetroCyanBrush}" />
+                                    <Setter TargetName="DisplayText" Property="Foreground" Value="{StaticResource MetroCyanBrush}" />
                                     <Setter TargetName="DisplayText" Property="Margin" Value="6" />
                                 </DataTrigger>
                             </DataTemplate.Triggers>
@@ -204,7 +207,7 @@
                                                 <Button Grid.Column="2"
                                                         HorizontalAlignment="Right"
                                                         VerticalAlignment="Stretch"
-                                                        Background="#FFE51400"
+                                                        Background="{StaticResource MetroRedBrush}"
                                                         Content="{x:Static localize:SettingFlipResources.AccountDelete}"
                                                         Foreground="White"
                                                         Padding="8,0"
@@ -322,6 +325,7 @@
                                 <RowDefinition />
                                 <RowDefinition />
                                 <RowDefinition />
+                                <RowDefinition />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -339,8 +343,10 @@
                                 <ComboBox SelectedIndex="{Binding TweetDisplayMode, Mode=TwoWay}">
                                     <ComboBox.Items>
                                         <ComboBoxItem Content="{x:Static localize:SettingFlipResources.TimelineDisplaySingleLine}" />
-                                        <ComboBoxItem Content="{x:Static localize:SettingFlipResources.TimelineDisplayMixed}" />
                                         <ComboBoxItem Content="{x:Static localize:SettingFlipResources.TimelineDisplayMultiline}" />
+                                        <ComboBoxItem Content="{x:Static localize:SettingFlipResources.TimelineDisplaySingleLineMixed}" />
+                                        <ComboBoxItem Content="{x:Static localize:SettingFlipResources.TimelineDisplayMultiLineMixed}" />
+                                        <ComboBoxItem Content="{x:Static localize:SettingFlipResources.TimelineDisplayExpanded}" />
                                     </ComboBox.Items>
                                 </ComboBox>
                             </DockPanel>
@@ -382,8 +388,25 @@
                                     <ComboBoxItem Content="{x:Static localize:SettingFlipResources.TimelineIconQualityNone}" />
                                 </ComboBox.Items>
                             </ComboBox>
+                            <TextBlock Grid.Row="3"
+                                       Grid.Column="0"
+                                       Margin="2,8,6,0"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Text="{x:Static localize:SettingFlipResources.TimelineThumbnailType}" />
+                            <ComboBox Grid.Row="3"
+                                      Grid.Column="1"
+                                      Margin="0,8,0,0"
+                                      SelectedIndex="{Binding ThumbnailStrategy,
+                                                              Mode=TwoWay}">
+                                <ComboBox.Items>
+                                    <ComboBoxItem Content="{x:Static localize:SettingFlipResources.TimelineThumbnailNone}" />
+                                    <ComboBoxItem Content="{x:Static localize:SettingFlipResources.TimelineThumbnailSingle}" />
+                                    <ComboBoxItem Content="{x:Static localize:SettingFlipResources.TimelineThumbnailAll}" />
+                                </ComboBox.Items>
+                            </ComboBox>
                         </Grid>
-                        <CheckBox Margin="0,0,0,8"
+                        <CheckBox Margin="0,8,0,8"
                                   VerticalAlignment="Top"
                                   Content="{x:Static localize:SettingFlipResources.TimelineScrollByPixel}"
                                   IsChecked="{Binding IsScrollByPixel}" />
@@ -396,16 +419,37 @@
                                   VerticalAlignment="Top"
                                   Content="{x:Static localize:SettingFlipResources.TimelineAllowFavoriteMyself}"
                                   IsChecked="{Binding IsAllowFavoriteMyself}" />
+
                         <CheckBox Margin="0,0,0,8"
                                   VerticalAlignment="Top"
-                                  Content="{x:Static localize:SettingFlipResources.TimelineShowThumbnails}"
-                                  IsChecked="{Binding ShowThumbnail}" />
-                        <CheckBox Margin="20,0,0,8"
-                                  VerticalAlignment="Top"
                                   Content="{x:Static localize:SettingFlipResources.TimelineOpenTwitterPicWithOriginalSize}"
-                                  IsChecked="{Binding OpenTwitterImageWithOriginalSize}"
-                                  IsEnabled="{Binding ShowThumbnail}" />
-                        <StackPanel Margin="0,8" Orientation="Horizontal">
+                                  IsChecked="{Binding OpenTwitterImageWithOriginalSize}" />
+                        <StackPanel Margin="0,4,0,8" Orientation="Horizontal">
+                            <CheckBox Margin="0,0,12,0"
+                                      VerticalAlignment="Center"
+                                      Content="{x:Static localize:SettingFlipResources.TimelineAutoCleanup}"
+                                      IsChecked="{Binding AutoCleanupStatuses}" />
+                            <Grid Margin="0" Visibility="{Binding AutoCleanupStatuses, Converter={StaticResource BoolVisibleConverter}}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="1*" />
+                                    <RowDefinition Height="1*" />
+                                </Grid.RowDefinitions>
+                                <StackPanel Grid.Row="0"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal">
+                                    <TextBlock Margin="0,4"
+                                               VerticalAlignment="Center"
+                                               Text="{x:Static localize:SettingFlipResources.TimelineAutoCleanupThreshold}" />
+                                    <xctk:IntegerUpDown Width="120"
+                                                        Minimum="0"
+                                                        Value="{Binding AutoCleanupThreshold}" />
+                                </StackPanel>
+                                <TextBlock Grid.Row="1"
+                                           Margin="0,4"
+                                           Text="{x:Static localize:SettingFlipResources.TimelineAutoCleanupDescription}" />
+                            </Grid>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,8" Orientation="Horizontal">
                             <TextBlock Margin="0,0,4,0"
                                        VerticalAlignment="Center"
                                        Text="{x:Static localize:SettingFlipResources.TimelineSearchLanguage}" />
@@ -497,11 +541,11 @@
                                TextWrapping="Wrap">
                         <TextBlock.Style>
                             <Style TargetType="{x:Type TextBlock}">
-                                <Setter Property="Background" Value="#FF1BA1E2" />
+                                <Setter Property="Background" Value="{StaticResource MetroCyanBrush}" />
                                 <Setter Property="Text" Value="{x:Static localize:GeneralFlipResources.TabConfigQueryValid}" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding FoundError}" Value="True">
-                                        <Setter Property="Background" Value="#FFE51400" />
+                                        <Setter Property="Background" Value="{StaticResource MetroRedBrush}" />
                                         <Setter Property="Text" Value="{x:Static localize:GeneralFlipResources.TabConfigQueryContainsError}" />
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -509,7 +553,7 @@
                         </TextBlock.Style>
                     </TextBlock>
                     <StackPanel Grid.Row="4" Orientation="Vertical">
-                        <CheckBox Margin="16,0,16,8"
+                        <CheckBox Margin="16,0,16,4"
                                   Content="{x:Static localize:SettingFlipResources.MuteUseLightweightMute}"
                                   IsChecked="{Binding UseLightweightMute}" />
                         <TextBlock Margin="16,0,16,12"
@@ -517,13 +561,16 @@
                                    TextWrapping="Wrap" />
                         <GroupBox Margin="16,0,16,16" Header="{x:Static localize:SettingFlipResources.MuteDetailSettings}">
                             <StackPanel>
-                                <TextBlock Margin="16,8" Text="{x:Static localize:SettingFlipResources.MuteDetailDescription}" />
-                                <CheckBox Margin="16,8"
+                                <TextBlock Margin="16,8,16,4" Text="{x:Static localize:SettingFlipResources.MuteDetailDescription}" />
+                                <CheckBox Margin="16,4"
                                           Content="{x:Static localize:SettingFlipResources.MuteBlockingUsers}"
                                           IsChecked="{Binding IsMuteBlockingUsers}" />
-                                <CheckBox Margin="16,8,16,16"
+                                <CheckBox Margin="16,4"
                                           Content="{x:Static localize:SettingFlipResources.MuteNoRetweets}"
                                           IsChecked="{Binding IsMuteNoRetweetUsersRetweet}" />
+                                <CheckBox Margin="16,4,16,8"
+                                          Content="{x:Static localize:SettingFlipResources.MuteOfficialMutedUsers}"
+                                          IsChecked="{Binding IsMuteOfficialMutes}" />
                             </StackPanel>
                         </GroupBox>
 
@@ -647,6 +694,9 @@
                                 <CheckBox Margin="0,0,0,8"
                                           Content="{x:Static localize:SettingFlipResources.NotifyShowPopupWhenWindowIsActive}"
                                           IsChecked="{Binding IsNotifyWhenWindowIsActive}" />
+                                <CheckBox Margin="0,0,0,8"
+                                          Content="{x:Static localize:SettingFlipResources.NotifyBackfilledTweets}"
+                                          IsChecked="{Binding IsNotifyBackfilledTweets}" />
                                 <CheckBox Margin="0,0,0,8"
                                           Content="{x:Static localize:SettingFlipResources.NotifyNewReplies}"
                                           IsChecked="{Binding IsNotifyMentions}" />
@@ -1006,6 +1056,9 @@
                         <CheckBox Margin="0,8"
                                   Content="{x:Static localize:SettingFlipResources.HighApplyUnstablePatch}"
                                   IsChecked="{Binding ApplyUnstablePatch}" />
+                        <CheckBox Margin="0,8"
+                                  Content="{x:Static localize:SettingFlipResources.HighUseInMemoryDatabase}"
+                                  IsChecked="{Binding UseInMemoryDatabase}" />
                         <StackPanel Margin="0,8" Orientation="Horizontal">
                             <TextBlock Margin="0,0,8,0"
                                        VerticalAlignment="Center"

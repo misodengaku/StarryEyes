@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Windows;
 using JetBrains.Annotations;
 using Livet;
 using Livet.Commands;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Anomaly.Utils;
 using StarryEyes.Globalization;
 using StarryEyes.Globalization.WindowParts;
@@ -25,7 +25,7 @@ namespace StarryEyes.ViewModels.WindowParts.Flips.SearchFlips
     public class UserInfoViewModel : ViewModel
     {
         private readonly SearchFlipViewModel _parent;
-        private readonly string _screenName;
+        private string _screenName;
         private UserTimelineViewModel _statuses;
         private UserTimelineViewModel _favorites;
         private UserFollowingViewModel _following;
@@ -143,52 +143,62 @@ namespace StarryEyes.ViewModels.WindowParts.Flips.SearchFlips
             this._parent = parent;
             this._screenName = screenName;
             this.CompositeDisposable.Add(
-                parent.ListenPropertyChanged(() => parent.DisplaySlimView)
-                      .Subscribe(_ => RaisePropertyChanged(() => DisplaySlimView)));
-            this.CompositeDisposable.Add(
-                StoreHelper.GetUser(screenName)
-                           .Finally(() => Communicating = false)
-                           .ObserveOnDispatcher()
-                           .Subscribe(
-                               user =>
-                               {
-                                   User = new UserViewModel(user);
-                                   this.CompositeDisposable.Add(User);
+                parent.ListenPropertyChanged(() => parent.DisplaySlimView,
+                    _ => RaisePropertyChanged(() => DisplaySlimView)));
+            LoadUser(screenName);
 
-                                   this.CompositeDisposable.Add(this._statuses = new UserTimelineViewModel(this,
-                                       new UserTimelineModel(user.Id, TimelineType.User)));
-                                   this.RaisePropertyChanged(() => Statuses);
+        }
 
-                                   this.CompositeDisposable.Add(this._favorites = new UserTimelineViewModel(this,
-                                       new UserTimelineModel(user.Id, TimelineType.Favorites)));
-                                   this.RaisePropertyChanged(() => Favorites);
+        private async void LoadUser(string screenName)
+        {
+            try
+            {
+                var user = await StoreHelper.GetUserAsync(screenName);
+                // overwrite by oficially-provided screen name
+                this._screenName = user.ScreenName;
+                RaisePropertyChanged(() => ScreenName);
 
-                                   this.CompositeDisposable.Add(this._following = new UserFollowingViewModel(this));
-                                   this.RaisePropertyChanged(() => Following);
+                User = new UserViewModel(user);
+                this.CompositeDisposable.Add(User);
 
-                                   this.CompositeDisposable.Add(this._followers = new UserFollowersViewModel(this));
-                                   this.RaisePropertyChanged(() => Followers);
+                Setting.Accounts.Collection
+                       .Where(a => a.Id != user.Id)
+                       .Select(a => new RelationControlViewModel(this, a, user))
+                       .ForEach(RelationControls.Add);
 
-                                   Setting.Accounts.Collection
-                                          .Where(a => a.Id != user.Id)
-                                          .Select(a => new RelationControlViewModel(this, a, user))
-                                          .ForEach(RelationControls.Add);
-                               },
-                               ex =>
-                               {
-                                   parent.Messenger.RaiseSafe(() => new TaskDialogMessage(new TaskDialogOptions
-                                   {
-                                       Title = SearchFlipResources.MsgUserInfoLoadErrorTitle,
-                                       MainIcon = VistaTaskDialogIcon.Error,
-                                       MainInstruction =
-                                           SearchFlipResources.MsgUserInfoLoadErrorInstFormat.SafeFormat(
-                                               SearchFlipResources.MsgUserProfile),
-                                       Content = ex.Message,
-                                       CommonButtons = TaskDialogCommonButtons.Close
-                                   }));
-                                   User = null;
-                                   parent.CloseResults();
-                               }));
+                this.CompositeDisposable.Add(this._statuses = new UserTimelineViewModel(this,
+                    new UserTimelineModel(user.Id, TimelineType.User)));
+                this.RaisePropertyChanged(() => Statuses);
+
+                this.CompositeDisposable.Add(this._favorites = new UserTimelineViewModel(this,
+                    new UserTimelineModel(user.Id, TimelineType.Favorites)));
+                this.RaisePropertyChanged(() => Favorites);
+
+                this.CompositeDisposable.Add(this._following = new UserFollowingViewModel(this));
+                this.RaisePropertyChanged(() => Following);
+
+                this.CompositeDisposable.Add(this._followers = new UserFollowersViewModel(this));
+                this.RaisePropertyChanged(() => Followers);
+            }
+            catch (Exception ex)
+            {
+                _parent.Messenger.RaiseSafe(() => new TaskDialogMessage(new TaskDialogOptions
+                {
+                    Title = SearchFlipResources.MsgUserInfoLoadErrorTitle,
+                    MainIcon = VistaTaskDialogIcon.Error,
+                    MainInstruction =
+                        SearchFlipResources.MsgUserInfoLoadErrorInstFormat.SafeFormat(
+                            SearchFlipResources.MsgUserProfile),
+                    Content = ex.Message,
+                    CommonButtons = TaskDialogCommonButtons.Close
+                }));
+                User = null;
+                _parent.CloseResults();
+            }
+            finally
+            {
+                Communicating = false;
+            }
         }
 
         public void Close()

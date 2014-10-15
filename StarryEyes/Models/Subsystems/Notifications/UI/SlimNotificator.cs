@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using StarryEyes.Albireo;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Anomaly.TwitterApi.DataModels;
 using StarryEyes.ViewModels.Notifications;
 
@@ -105,11 +106,11 @@ namespace StarryEyes.Models.Subsystems.Notifications.UI
             OnNewNotificationDataQueued.SafeInvoke();
         }
 
-        public void Retweeted(TwitterUser source, TwitterStatus target)
+        public void Retweeted(TwitterUser source, TwitterStatus original, TwitterStatus retweet)
         {
             lock (_middlePriorityQueue)
             {
-                _middlePriorityQueue.AddLast(new NotificationData(SlimNotificationKind.Retweet, source, target));
+                _middlePriorityQueue.AddLast(new NotificationData(SlimNotificationKind.Retweet, source, original));
             }
             OnNewNotificationDataQueued.SafeInvoke();
         }

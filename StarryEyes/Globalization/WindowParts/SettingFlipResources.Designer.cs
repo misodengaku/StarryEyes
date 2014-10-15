@@ -585,6 +585,15 @@ namespace StarryEyes.Globalization.WindowParts {
         }
         
         /// <summary>
+        ///   Use in-memory database mode [need restarting Krile for apply] に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string HighUseInMemoryDatabase {
+            get {
+                return ResourceManager.GetString("HighUseInMemoryDatabase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   When sending a reply to the reply to the account which is fall back from other account, falling back agency account is specified automatically. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string InputBacktrackDescription {
@@ -926,6 +935,15 @@ namespace StarryEyes.Globalization.WindowParts {
         }
         
         /// <summary>
+        ///   Mute users you specified on twitter official [recommended] に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MuteOfficialMutedUsers {
+            get {
+                return ResourceManager.GetString("MuteOfficialMutedUsers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Reset changes に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string MuteReset {
@@ -958,6 +976,15 @@ namespace StarryEyes.Globalization.WindowParts {
         public static string NotifyAllTabDisabledTitle {
             get {
                 return ResourceManager.GetString("NotifyAllTabDisabledTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Notify backfilled tweets に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NotifyBackfilledTweets {
+            get {
+                return ResourceManager.GetString("NotifyBackfilledTweets", resourceCulture);
             }
         }
         
@@ -1304,20 +1331,56 @@ namespace StarryEyes.Globalization.WindowParts {
         }
         
         /// <summary>
-        ///   Focus to expand に類似しているローカライズされた文字列を検索します。
+        ///   Auto cleanup old tweets に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        public static string TimelineDisplayMixed {
+        public static string TimelineAutoCleanup {
             get {
-                return ResourceManager.GetString("TimelineDisplayMixed", resourceCulture);
+                return ResourceManager.GetString("TimelineAutoCleanup", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Always multi line (expanded) に類似しているローカライズされた文字列を検索します。
+        ///   Note: Deletion will be performed if a twice as many tweet as this number is stored. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TimelineAutoCleanupDescription {
+            get {
+                return ResourceManager.GetString("TimelineAutoCleanupDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Number of leaving status:  に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TimelineAutoCleanupThreshold {
+            get {
+                return ResourceManager.GetString("TimelineAutoCleanupThreshold", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Always expanded (default) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TimelineDisplayExpanded {
+            get {
+                return ResourceManager.GetString("TimelineDisplayExpanded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Always shrinked multi line に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string TimelineDisplayMultiline {
             get {
                 return ResourceManager.GetString("TimelineDisplayMultiline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Compact multi line (focus to expand) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TimelineDisplayMultiLineMixed {
+            get {
+                return ResourceManager.GetString("TimelineDisplayMultiLineMixed", resourceCulture);
             }
         }
         
@@ -1327,6 +1390,15 @@ namespace StarryEyes.Globalization.WindowParts {
         public static string TimelineDisplaySingleLine {
             get {
                 return ResourceManager.GetString("TimelineDisplaySingleLine", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Single line (focus to expand) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TimelineDisplaySingleLineMixed {
+            get {
+                return ResourceManager.GetString("TimelineDisplaySingleLineMixed", resourceCulture);
             }
         }
         
@@ -1498,6 +1570,42 @@ namespace StarryEyes.Globalization.WindowParts {
         public static string TimelineShowThumbnails {
             get {
                 return ResourceManager.GetString("TimelineShowThumbnails", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Show all thumbnails に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TimelineThumbnailAll {
+            get {
+                return ResourceManager.GetString("TimelineThumbnailAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   None に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TimelineThumbnailNone {
+            get {
+                return ResourceManager.GetString("TimelineThumbnailNone", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Show first image only に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TimelineThumbnailSingle {
+            get {
+                return ResourceManager.GetString("TimelineThumbnailSingle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Thumbnails: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TimelineThumbnailType {
+            get {
+                return ResourceManager.GetString("TimelineThumbnailType", resourceCulture);
             }
         }
     }

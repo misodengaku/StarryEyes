@@ -272,6 +272,11 @@ namespace StarryEyes.Views.Utils
         {
             foreach (var tok in StatusTextUtil.Tokenize(text))
             {
+                if (String.IsNullOrEmpty(tok.Text))
+                {
+                    // skip empty block
+                    continue;
+                }
                 switch (tok.Kind)
                 {
                     case TokenKind.Url:
@@ -349,15 +354,21 @@ namespace StarryEyes.Views.Utils
         private static Inline GenerateUserLink([NotNull] DependencyObject obj,
             [NotNull] string surface, [NotNull] string userScreenName)
         {
-            return GenerateLink(obj,
-                surface.StartsWith("@") ? surface : "@" + surface,
+            if (surface.Length > 0 && surface[0] != '@' && surface[0] != '＠')
+            {
+                surface = "@" + surface;
+            }
+            return GenerateLink(obj, surface,
                 UserNavigation + userScreenName);
         }
 
         private static Inline GenerateHashtagLink([NotNull] DependencyObject obj, [NotNull] string surface)
         {
-            return GenerateLink(obj,
-                surface.StartsWith("#") ? surface : "#" + surface,
+            if (surface.Length > 0 && surface[0] != '#' && surface[0] != '＃')
+            {
+                surface = "#" + surface;
+            }
+            return GenerateLink(obj, surface,
                 HashtagNavigation + surface);
         }
     }

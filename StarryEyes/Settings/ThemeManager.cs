@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using JetBrains.Annotations;
-using StarryEyes.Albireo;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Globalization.Models;
 using StarryEyes.Models;
 using StarryEyes.Models.Backstages.SystemEvents;
@@ -76,22 +76,33 @@ namespace StarryEyes.Settings
 
         private static void CheckSetting()
         {
+            // prepare default themes
+            var defaults = new[] { BuiltInThemeProvider.GetDefault(), BuiltInThemeProvider.GetDarkDefault() };
+            foreach (var profile in defaults)
+            {
+                if (!ThemeProfiles.ContainsKey(profile.Name))
+                {
+                    profile.Save(ThemeProfileDirectoryPath);
+                    ThemeProfiles.Add(profile.Name, profile);
+                }
+            }
+
             // check assign is existed
-            var group = Setting.Theme.Value ?? DefaultThemeProvider.DefaultThemeName;
-            if (ThemeProfiles.ContainsKey(group)) return;
-            // load default
-            Setting.Theme.Value = DefaultThemeProvider.DefaultThemeName;
-            if (ThemeProfiles.ContainsKey(DefaultThemeProvider.DefaultThemeName)) return;
-            // default binding is not found
-            // make default
-            var dtheme = DefaultThemeProvider.GetDefault();
-            dtheme.Save(ThemeProfileDirectoryPath);
-            ThemeProfiles.Add(dtheme.Name, dtheme);
+            var group = Setting.Theme.Value;
+            if (group == null || !ThemeProfiles.ContainsKey(group))
+            {
+                // set as default
+                Setting.Theme.Value = BuiltInThemeProvider.DefaultThemeName;
+            }
+
         }
 
         public static void ReloadCandidates()
         {
             var path = ThemeProfileDirectoryPath;
+
+            // clean-up previous
+            ThemeProfiles.Clear();
 
             // load all assigns.
             foreach (var file in Directory.EnumerateFiles(path, "*.xml"))
@@ -105,7 +116,7 @@ namespace StarryEyes.Settings
         {
             get
             {
-                var profileId = Setting.Theme.Value ?? DefaultThemeProvider.DefaultThemeName;
+                var profileId = Setting.Theme.Value ?? BuiltInThemeProvider.DefaultThemeName;
                 if (ThemeProfiles.ContainsKey(profileId))
                 {
                     return ThemeProfiles[profileId];
@@ -113,7 +124,7 @@ namespace StarryEyes.Settings
 
                 // not found
                 BackstageModel.RegisterEvent(new ThemeProfileNotFoundEvent(profileId));
-                return DefaultThemeProvider.GetDefault();
+                return BuiltInThemeProvider.GetDefault();
             }
         }
 

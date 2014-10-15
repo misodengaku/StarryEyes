@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using System.Reactive.Linq;
 using JetBrains.Annotations;
 using Livet;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Globalization;
 using StarryEyes.Globalization.WindowParts;
 using StarryEyes.Models.Accounting;
@@ -40,34 +40,21 @@ namespace StarryEyes.ViewModels.WindowParts.Inputting
                        .ForEach(InputModel.AccountSelector.Accounts.Add);
             };
             CompositeDisposable.Add(this.AccountSelectionFlip);
-            CompositeDisposable.Add(
+            CompositeDisposable.Add(_accounts =
                 ViewModelHelperRx.CreateReadOnlyDispatcherCollectionRx(
                     InputModel.AccountSelector.Accounts,
                     a => new TwitterAccountViewModel(a),
                     DispatcherHelper.UIDispatcher));
-            CompositeDisposable.Add(
-                InputModel.AccountSelector.Accounts.ListenCollectionChanged()
-                          .Subscribe(_ =>
-                          {
-                              RaisePropertyChanged(() => AuthInfoGridRowColumn);
-                              this.RaisePropertyChanged(() => AuthInfoScreenNames);
-                          }));
-            CompositeDisposable.Add(this._accounts =
-                ViewModelHelperRx.CreateReadOnlyDispatcherCollectionRx(
-                    InputModel.AccountSelector.Accounts,
-                    account => new TwitterAccountViewModel(account),
-                    DispatcherHelper.UIDispatcher));
-            CompositeDisposable.Add(this._accounts
-                .ListenCollectionChanged()
-                .Subscribe(_ =>
+            CompositeDisposable.Add(_accounts.ListenCollectionChanged(_ =>
                 {
-                    this.RaisePropertyChanged(() => AuthInfoGridRowColumn);
-                    RaisePropertyChanged(() => IsBindingAuthInfoExisted);
+                    RaisePropertyChanged(() => AuthInfoGridRowColumn);
+                    RaisePropertyChanged(() => AuthInfoScreenNames);
+                    RaisePropertyChanged(() => IsBoundAccountExists);
                 }));
             CompositeDisposable.Add(
                 InputModel.AccountSelector.ListenPropertyChanged(
-                    () => InputModel.AccountSelector.IsSynchronizedWithTab)
-                          .Subscribe(_ => RaisePropertyChanged(() => IsSynchronizedWithTab)));
+                    () => InputModel.AccountSelector.IsSynchronizedWithTab,
+                    _ => RaisePropertyChanged(() => IsSynchronizedWithTab)));
         }
 
         public AccountSelectionFlipViewModel AccountSelectionFlip
@@ -80,7 +67,7 @@ namespace StarryEyes.ViewModels.WindowParts.Inputting
             get { return this._accounts; }
         }
 
-        public bool IsBindingAuthInfoExisted
+        public bool IsBoundAccountExists
         {
             get { return this._accounts != null && this._accounts.Count > 0; }
         }

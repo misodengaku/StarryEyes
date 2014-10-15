@@ -1,5 +1,5 @@
 ﻿using System;
-using StarryEyes.Albireo;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Anomaly.TwitterApi.DataModels;
 using StarryEyes.Casket;
 using StarryEyes.Filters.Expressions.Operators;
@@ -16,7 +16,7 @@ namespace StarryEyes.Filters.Expressions
 
         public static readonly Func<TwitterStatus, bool> Contradiction = _ => false;
 
-        public event Action ReapplyRequested;
+        public event Action InvalidateRequested;
 
         public abstract string ToQuery();
 
@@ -28,9 +28,9 @@ namespace StarryEyes.Filters.Expressions
         {
         }
 
-        protected void RaiseReapplyFilter()
+        protected void RaiseInvalidateFilter()
         {
-            this.ReapplyRequested.SafeInvoke();
+            this.InvalidateRequested.SafeInvoke();
         }
     }
 
@@ -59,10 +59,10 @@ namespace StarryEyes.Filters.Expressions
             set
             {
                 if (_operator != null)
-                    _operator.ReapplyRequested -= this.RaiseReapplyFilter;
+                    _operator.InvalidateRequested -= this.RaiseInvalidateFilter;
                 _operator = value;
                 if (_operator != null)
-                    _operator.ReapplyRequested += this.RaiseReapplyFilter;
+                    _operator.InvalidateRequested += this.RaiseInvalidateFilter;
             }
         }
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reactive.Linq;
-using StarryEyes.Albireo;
+using StarryEyes.Albireo.Helpers;
 using StarryEyes.Anomaly.TwitterApi.DataModels;
 using StarryEyes.Casket;
 using StarryEyes.Filters.Expressions;
@@ -118,7 +118,7 @@ namespace StarryEyes.Filters
             if (this.PredicateTreeRoot != null)
             {
                 this.PredicateTreeRoot.BeginLifecycle();
-                this.PredicateTreeRoot.ReapplyRequested += this.RaiseInvalidateRequired;
+                this.PredicateTreeRoot.InvalidateRequested += this.RaiseInvalidateRequired;
             }
         }
 
@@ -128,14 +128,14 @@ namespace StarryEyes.Filters
             {
                 Sources.ForEach(s =>
                 {
-                    s.Deactivate();
                     s.InvalidateRequired -= this.RaiseInvalidateRequired;
+                    s.Deactivate();
                 });
             }
             if (this.PredicateTreeRoot != null)
             {
+                this.PredicateTreeRoot.InvalidateRequested -= this.RaiseInvalidateRequired;
                 this.PredicateTreeRoot.EndLifecycle();
-                this.PredicateTreeRoot.ReapplyRequested -= this.RaiseInvalidateRequired;
             }
         }
     }
